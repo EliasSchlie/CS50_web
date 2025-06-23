@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Search</title>
+        <style>
+            body {
+                height: 100vh;
+                margin: 0;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                background: #f8f9fa;
+            }
+            .top-links {
+                position: absolute;
+                top: 30px;
+                right: 40px;
+                font-size: 16px;
+            }
+            .top-links a {
+                margin-left: 24px;
+                text-decoration: none;
+                color: #1a0dab;
+                font-weight: 500;
+            }
+            .search-container {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                width: 100%;
+            }
+            .search-bar {
+                width: 400px;
+                max-width: 90vw;
+                padding: 12px 20px;
+                border-radius: 24px;
+                border: 1px solid #dfe1e5;
+                outline: none;
+                font-size: 18px;
+                margin-bottom: 20px;
+                box-shadow: 0 1px 6px rgba(32,33,36,0.28);
+                background: #fff;
+            }
+            .search-button, .lucky-button {
+                width: 160px;
+                padding: 10px 0;
+                border-radius: 24px;
+                border: none;
+                background: #f8f9fa;
+                font-size: 16px;
+                cursor: pointer;
+                box-shadow: 0 1px 1px rgba(0,0,0,0.1);
+                transition: background 0.2s;
+                margin-bottom: 10px;
+            }
+            .search-button:hover, .lucky-button:hover {
+                background: #e8e8e8;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="top-links">
+            <a href="image.html">Image Search</a>
+            <a href="advanced.html">Advanced Search</a>
+        </div>
+        <form action="https://google.com/search" class="search-container" onsubmit="return handleLucky(event)">
+            <input type="text" name="q" class="search-bar" autocomplete="off" autofocus>
+            <input type="submit" value="Google Search" class="search-button">
+            <button type="button" class="lucky-button" onclick="luckySearch()">I'm Feeling Lucky</button>
+        </form>
+        <script>
+            function luckySearch() {
+                const q = document.querySelector('.search-bar').value;
+                if (q) {
+                    window.location = 'https://www.google.com/search?q=' + encodeURIComponent(q) + '&btnI=1';
+                }
+            }
+        </script>
+    </body>
+</html>

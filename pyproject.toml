@@ -1,7 +1,10 @@
 [project]
 name = "cs50-web"
 version = "0.1.0"
-description = "Add your description here"
+description = "A collection of my solutions to the problem sets of Harvard's CS50-web"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "check50>=3.3.11",
+    "submit50>=3.2.0",
+]
