@@ -1,0 +1,11 @@
+@media (min-width: 768px) { /* only apply to screens larger than 768px */
+    .container {
+        display: flex;
+    }
+}
+
+@media (max-width: 768px) { /* only apply to screens smaller than 768px */
+    .container {
+        display: block;
+    }
+}
