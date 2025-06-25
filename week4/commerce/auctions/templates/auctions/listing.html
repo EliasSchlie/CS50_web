@@ -1,0 +1,82 @@
+{% extends "auctions/layout.html" %}
+
+{% block body %}
+    {# --- Listing Info --- #}
+    {% include "auctions/partials/listing_info.html" %}
+
+    {# --- Auction Status --- #}
+    {% if not listing.active %}
+        <p>This auction is closed.</p>
+        {% if user == listing.bids.last.user %}
+            <p>You won this auction!</p>
+        {% endif %}
+    {% endif %}
+
+    {# --- Watchlist Actions --- #}
+    {% if user.is_authenticated %}
+        {% if listing in user.watchlist.all %}
+            <form action="{% url 'watchlist' %}" method="post">
+                {% csrf_token %}
+                <input type="submit" name="action" value="Remove from Watchlist">
+                <input type="hidden" name="listing_id" value="{{ listing.id }}">
+            </form>
+        {% else %}
+            <form action="{% url 'watchlist' %}" method="post">
+                {% csrf_token %}
+                <input type="submit" name="action" value="Add to Watchlist">
+                <input type="hidden" name="listing_id" value="{{ listing.id }}">
+            </form>
+        {% endif %}
+    {% endif %}
+
+    {# --- Bidding/Closing Actions (only if auction is active) --- #}
+    {% if listing.active %}
+        {% if user.is_authenticated %}
+            {% if user == listing.owner %}
+                <form action="{% url 'close_auction' %}" method="post">
+                    {% csrf_token %}
+                    <input type="submit" value="Close Auction">
+                    <input type="hidden" name="listing_id" value="{{ listing.id }}">
+                </form>
+            {% else %}
+                <form action="{% url 'bid' %}" method="post">
+                    {% csrf_token %}
+                    <input type="number" name="bid" placeholder="Enter bid">
+                    <input type="hidden" name="listing_id" value="{{ listing.id }}">
+                    <input type="submit" value="Place Bid">
+                </form>
+            {% endif %}
+        {% endif %}
+    {% endif %}
+
+    {# --- Messages --- #}
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    {# --- Bid History --- #}
+    {% if listing.bids.all %}
+        <h3>Bid History</h3>
+        <ul>
+            {% for bid in listing.bids.all reversed %}
+                <li>{{ bid.user.username }} - ${{ bid.amount }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    {# --- Comments --- #}
+    {% if user.is_authenticated %}
+        <h3>Add a Comment</h3>
+        <form action="{% url 'comment' %}" method="post">
+            {% csrf_token %}
+            {{ comment_form }}
+            <input type="hidden" name="listing_id" value="{{ listing.id }}">
+            <input type="submit" value="Add Comment">
+        </form>
+    {% endif %}
+    {% for comment in listing.comments.all %}
+        <p>{{ comment.user.username }} - {{ comment.comment }}</p>
+    {% endfor %}
+{% endblock %}

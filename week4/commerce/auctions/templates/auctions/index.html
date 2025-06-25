@@ -1,0 +1,17 @@
+{% extends "auctions/layout.html" %}
+
+{% block body %}
+    <h2>Active Listings</h2>
+
+    {% for listing in listings %}
+        {% if listing.active %}
+        <div class="listing">
+            {% include "auctions/partials/listing_info.html" %}
+            <a href="{% url 'listing' listing.id %}">View Listing</a>
+        </div>
+        <hr>
+        {% endif %}
+    {% empty %}
+        <p>No active listings available.</p>
+    {% endfor %}
+{% endblock %}

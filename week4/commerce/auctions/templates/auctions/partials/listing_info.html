@@ -1,0 +1,16 @@
+<h1>{{ listing.title }}</h1>
+<p>{{ listing.description }}</p>
+{% if listing.image_url %}
+    <img src="{{ listing.image_url }}" alt="{{ listing.title }}" style="max-width: 300px;">
+{% endif %}
+<p>Starting bid: ${{ listing.starting_bid }}</p>
+{% if listing.bids.all %}
+    <p>Highest bid: ${{ listing.bids.last.amount }}</p>
+{% endif %}
+<p>Listed by: {{ listing.owner }}</p>
+{% if listing.category %}
+    <p>Category: <a href="{% url 'category_detail' listing.category.name %}">{{ listing.category }}</a></p>
+{% endif %}
+{% if not listing.active %}
+    <p>This auction is closed and the winner is {{ listing.bids.last.user.username }}.</p>
+{% endif %}
