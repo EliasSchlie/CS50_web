@@ -1,32 +1,40 @@
+/*
+ * Dark Theme - Deep Black, Gray, Minimalistic
+ * Font: Courier New
+ * Users can add emojis directly in their post content.
+ */
+
 body {
-    background: #f4f6fb;
-    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #0a0a0a; /* Deep black background */
+    color: #cccccc; /* Light gray text color */
+    font-family: 'Courier New', Courier, monospace; /* Courier New font */
+    text-shadow: none; /* No text shadow for minimalistic look */
 }
 
 .container {
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+    background: #1a1a1a; /* Darker gray container background */
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6); /* Subtle dark shadow */
     padding: 2rem 2.5rem;
     margin-bottom: 2rem;
-    border: none;
+    border: 1px solid #333333; /* Dark gray border */
 }
 
 #new-post-container {
     margin-top: 2rem;
     margin-bottom: 2rem;
-    border-left: 4px solid #007bff;
-    background: #f0f7ff;
+    border-left: 4px solid #555555; /* Medium gray accent */
+    background: #151515; /* Slightly lighter black background */
 }
 
 #new-post-container h3 {
-    color: #007bff;
+    color: #cccccc; /* Light gray heading */
     font-weight: 600;
     margin-bottom: 1rem;
 }
 
 #posts-container h3 {
-    color: #333;
+    color: #cccccc;
     font-weight: 600;
     margin-bottom: 1.5rem;
 }
@@ -34,33 +42,35 @@ body {
 .post {
     display: flex;
     align-items: flex-start;
-    background: #fff;
-    border-radius: 10px;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    background: #1a1a1a;
+    border-radius: 4px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4); /* Subtle dark shadow */
     padding: 1.5rem 1.5rem 1rem 1.5rem;
     margin-bottom: 1.5rem;
-    border: none;
-    transition: box-shadow 0.2s;
+    border: 1px solid #333333;
+    transition: box-shadow 0.2s, transform 0.2s;
     position: relative;
 }
 
 .post:hover {
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.10);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.8);
+    transform: translateY(-2px); /* Slight lift on hover */
 }
 
 .post-avatar {
     width: 48px;
     height: 48px;
     border-radius: 50%;
-    background: #e0e7ef;
+    background: #333333; /* Dark gray avatar background */
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 1.5rem;
     font-weight: 700;
-    color: #007bff;
+    color: #cccccc; /* Light gray text on avatar */
     margin-right: 1.25rem;
     flex-shrink: 0;
+    border: 2px solid #555555; /* Medium gray border */
 }
 
 .post-content {
@@ -75,19 +85,25 @@ body {
 
 .post-username {
     font-weight: 600;
-    color: #007bff;
+    color: #cccccc; /* Light gray username */
     margin-right: 0.75rem;
     font-size: 1.1rem;
 }
 
+.nav-link#me,
+.nav-link#all,
+.nav-link#following {
+    cursor: pointer;
+}
+
 .post-timestamp {
-    color: #888;
+    color: #888888; /* Muted gray timestamp */
     font-size: 0.95rem;
 }
 
 .post-body {
     margin-bottom: 0.75rem;
-    color: #222;
+    color: #cccccc;
     font-size: 1.08rem;
 }
 
@@ -99,19 +115,20 @@ body {
 
 .btn-primary,
 .btn-primary:focus {
-    background: linear-gradient(90deg, #007bff 60%, #0056b3 100%);
+    background: linear-gradient(90deg, #333333 60%, #555555 100%); /* Dark to medium gray gradient */
     border: none;
-    color: #fff;
+    color: #cccccc; /* Light gray text on button */
     font-weight: 500;
-    border-radius: 6px;
+    border-radius: 4px;
     padding: 0.4rem 1.2rem;
-    box-shadow: 0 1px 4px rgba(0, 123, 255, 0.08);
-    transition: background 0.2s, box-shadow 0.2s;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4); /* Subtle dark shadow */
+    transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
 }
 
 .btn-primary:hover {
-    background: linear-gradient(90deg, #0056b3 60%, #007bff 100%);
-    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.13);
+    background: linear-gradient(90deg, #555555 60%, #333333 100%);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+    transform: translateY(-1px);
 }
 
 .btn {
@@ -120,8 +137,63 @@ body {
 
 .like-count {
     margin-left: 0.5rem;
-    color: #007bff;
+    color: #cccccc; /* Light gray like count */
     font-weight: 600;
+}
+
+.profile-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.profile-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: #333333;
+    color: #cccccc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-right: 2rem;
+    border: 3px solid #555555;
+}
+
+.profile-info {
+    flex: 1;
+}
+
+.profile-username {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: #cccccc;
+}
+
+.profile-stats {
+    display: flex;
+    gap: 2rem;
+    margin-bottom: 1rem;
+}
+
+.profile-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.stat-count {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #cccccc;
+}
+
+.stat-label {
+    font-size: 1rem;
+    color: #888888;
 }
 
 @media (max-width: 600px) {
@@ -137,5 +209,14 @@ body {
     .post-avatar {
         margin-bottom: 0.7rem;
         margin-right: 0;
+    }
+
+    .profile-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .profile-avatar {
+        margin-bottom: 1rem;
     }
 }

@@ -1,327 +1,355 @@
-// DOMContentLoaded: Set up navigation and load initial posts
-
 document.addEventListener("DOMContentLoaded", () => {
-  bindNavEvents();
-  loadPosts("all");
+  const app = new App();
+  app.init();
 });
 
-// Navigation event bindings
-function bindNavEvents() {
-  document
-    .querySelector("#all")
-    .addEventListener("click", () => loadPosts("all"));
-  document
-    .querySelector("#following")
-    .addEventListener("click", () => loadPosts("following"));
-  document
-    .querySelector("#me")
-    .addEventListener("click", () => loadPosts("me"));
-}
-
-// Main function to load posts based on filter (all, following, me, or user id)
-function loadPosts(filter) {
-  showElement("#new-post-container");
-  hideElement("#profile-view");
-  const url = getPostsUrl(filter);
-  const postsContainer = document.querySelector("#posts-container");
-  postsContainer.innerHTML = `<h3>Posts</h3>`;
-
-  fetch(url)
-    .then((response) => response.json())
-    .then((posts) => {
-      posts.forEach((post) =>
-        postsContainer.appendChild(createPostElement(post, filter))
-      );
-    });
-}
-
-// Helper to determine the correct posts URL
-function getPostsUrl(filter) {
-  if (filter === "me") {
-    return `/profile/${window.CURRENT_USER_ID}/posts/`;
-  } else if (filter === "all" || filter === "following") {
-    return `/posts/${filter}/`;
-  } else {
-    return `/profile/${filter}/posts/`;
+class App {
+  constructor() {
+    this.postsContainer = document.querySelector("#posts-container");
+    this.profileContainer = document.querySelector("#profile-view");
+    this.newPostContainer = document.querySelector("#new-post-container");
+    this.paginationContainer = document.querySelector("#pagination-container");
+    this.currentUser = null;
   }
-}
 
-// Create a DOM element for a single post
-function createPostElement(post, filter) {
-  const postDiv = createDiv("post");
-  postDiv.appendChild(createAvatar(post.user__username));
-  postDiv.appendChild(createPostContent(post, filter));
-  return postDiv;
-}
+  async init() {
+    await this.fetchCurrentUser();
+    this.bindNavEvents();
+    this.handleRouting();
+    window.onpopstate = (event) => {
+      this.handleRouting(event.state);
+    };
+  }
 
-function createAvatar(username) {
-  const avatarDiv = createDiv("post-avatar");
-  avatarDiv.textContent = username ? username.charAt(0).toUpperCase() : "?";
-  return avatarDiv;
-}
+  bindNavEvents() {
+    document.querySelector("#all").addEventListener("click", () => this.navigateTo("/"));
+    document.querySelector("#following").addEventListener("click", () => this.navigateTo("/following"));
+    if (this.currentUser) {
+        document.querySelector("#me").addEventListener("click", () => this.navigateTo(`/u/${this.currentUser.username}`)
+        );
+    }
+    document.querySelector("#new-post-form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      this.createNewPost();
+    });
+  }
 
-function createPostContent(post, filter) {
-  const contentDiv = createDiv("post-content");
-  contentDiv.appendChild(createPostHeader(post));
-  contentDiv.appendChild(createPostBody(post.content));
-  contentDiv.appendChild(createPostActions(post, filter));
-  return contentDiv;
-}
+  navigateTo(path, page = 1) {
+    const url = new URL(window.location.origin + path);
+    url.searchParams.set('page', page);
+    history.pushState({ path, page }, "", url);
+    this.handleRouting({ path, page });
+  }
 
-function createPostHeader(post) {
-  const headerDiv = createDiv("post-header");
-  const usernameSpan = document.createElement("span");
-  usernameSpan.className = "post-username";
-  usernameSpan.textContent = post.user__username || "Unknown";
-  usernameSpan.style.cursor = "pointer";
-  usernameSpan.addEventListener("click", (e) => {
-    e.stopPropagation();
-    loadProfile(post.user_id);
-  });
-  const timestampSpan = document.createElement("span");
-  timestampSpan.className = "post-timestamp";
-  timestampSpan.textContent = post.timestamp;
-  headerDiv.append(usernameSpan, timestampSpan);
-  return headerDiv;
-}
+  handleRouting(state = null) {
+    const path = state ? state.path : window.location.pathname;
+    const page = state ? state.page : new URLSearchParams(window.location.search).get('page') || 1;
+    if (path === "/following") {
+      this.loadPosts("following", page);
+    } else if (path.startsWith("/u/")) {
+      const username = path.split("/")[2];
+      this.loadProfile(username, page);
+    } else {
+      this.loadPosts(null, page);
+    }
+  }
 
-function createPostBody(content) {
-  const bodyDiv = createDiv("post-body");
-  bodyDiv.innerHTML = content.replace(/\n/g, "<br>");
-  return bodyDiv;
-}
-
-function createPostActions(post, filter) {
-  const actionsDiv = createDiv("post-actions");
-
-  // Like button
-  const likeBtn = createButton("Like", "btn btn-primary btn-sm");
-  // Like count
-  const likeCountSpan = document.createElement("span");
-  likeCountSpan.className = "like-count";
-  likeCountSpan.textContent = post.likes_count == null ? 0 : post.likes_count;
-
-  // Set initial like button state (optional: could be improved to show if user liked)
-  // likeBtn.textContent = post.liked_by_user ? "Unlike" : "Like";
-
-  likeBtn.addEventListener("click", () => {
-    fetch("/like/", {
+  async createNewPost() {
+    const content = document.querySelector("#new-post-content").value;
+    const response = await fetch("/api/posts", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-CSRFToken": getCookie("csrftoken"),
+        "X-CSRFToken": this.getCookie("csrftoken"),
       },
-      body: JSON.stringify({ post_id: post.id }),
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        if (data.likes_count !== undefined) {
-          likeCountSpan.textContent = data.likes_count;
-          likeBtn.textContent = data.liked ? "Unlike" : "Like";
-        }
-      });
-  });
-
-  // Comment button
-  const commentBtn = createButton(
-    "Comment",
-    "btn btn-outline-primary btn-sm ml-3"
-  );
-  // Show/Hide Comments button
-  const toggleCommentsBtn = createButton(
-    "Show Comments",
-    "btn btn-link btn-sm ml-2"
-  );
-
-  // Comments state
-  let commentsVisible = false;
-  let commentsDiv = null;
-  toggleCommentsBtn.addEventListener("click", () => {
-    if (commentsVisible) {
-      if (commentsDiv && commentsDiv.parentNode) commentsDiv.remove();
-      toggleCommentsBtn.textContent = "Show Comments";
-      commentsVisible = false;
-      return;
-    }
-    commentsDiv = createDiv("comments-list");
-    commentsDiv.style.marginTop = "0.5rem";
-    commentsDiv.textContent = "Loading comments...";
-    actionsDiv.appendChild(commentsDiv);
-    fetch(`/posts/${post.id}/comments/`)
-      .then((res) => res.json())
-      .then((comments) => {
-        commentsDiv.innerHTML = "";
-        if (comments.length === 0) {
-          commentsDiv.textContent = "No comments yet.";
-        } else {
-          comments.forEach((c) => {
-            const cDiv = createDiv("comment-item");
-            cDiv.innerHTML = `<strong>${c.user__username}</strong>: ${c.content} <span style='color:#888;font-size:0.9em;'>${c.timestamp}</span>`;
-            commentsDiv.appendChild(cDiv);
-          });
-        }
-      });
-    toggleCommentsBtn.textContent = "Hide Comments";
-    commentsVisible = true;
-  });
-
-  // Comment input
-  let commentInputDiv = null;
-  commentBtn.addEventListener("click", () => {
-    if (commentInputDiv && commentInputDiv.parentNode) {
-      commentInputDiv.remove();
-      commentInputDiv = null;
-      return;
-    }
-    commentInputDiv = createCommentInput(post.id, filter);
-    actionsDiv.appendChild(commentInputDiv);
-    commentInputDiv.querySelector("input").focus();
-  });
-
-  actionsDiv.append(likeBtn, likeCountSpan, commentBtn, toggleCommentsBtn);
-  return actionsDiv;
-}
-
-function createCommentInput(postId, filter) {
-  const inputDiv = document.createElement("div");
-  inputDiv.style.marginTop = "0.5rem";
-  inputDiv.style.display = "flex";
-  inputDiv.style.gap = "0.5rem";
-
-  const input = document.createElement("input");
-  input.type = "text";
-  input.placeholder = "Write a comment...";
-  input.className = "form-control";
-  input.style.flex = "1";
-
-  const submitBtn = createButton("Submit", "btn btn-primary btn-sm");
-  submitBtn.addEventListener("click", () => {
-    const commentText = input.value.trim();
-    if (commentText) {
-      sendComment(
-        postId,
-        commentText,
-        () => {
-          alert("Comment posted!");
-          loadPosts(filter);
-        },
-        (err) => alert("Failed to post comment: " + err)
-      );
-    }
-  });
-
-  inputDiv.append(input, submitBtn);
-  return inputDiv;
-}
-
-// Profile loading
-function loadProfile(profileId) {
-  fetch(`/profile/${profileId}`)
-    .then((response) => response.text())
-    .then((html) => {
-      document.querySelector("#profile-view").innerHTML = html;
-      bindFollowButton();
+      body: JSON.stringify({ content }),
     });
-  loadPosts(profileId);
-  showElement("#profile-view");
-  hideElement("#new-post-container");
-}
+    if (response.ok) {
+      this.loadPosts();
+      document.querySelector("#new-post-content").value = "";
+    }
+    else {
+      console.error("Failed to create post");
+    }
+  }
 
-function bindFollowButton() {
-  const followBtn = document.getElementById("follow-btn");
-  if (followBtn) {
-    followBtn.addEventListener("click", function () {
-      const profileId = this.getAttribute("data-profile-id");
-      fetch("/follow_toggle/", {
+  async loadPosts(filter = null, page = 1) {
+    if (!filter || filter === 'following') {
+        this.show(this.newPostContainer);
+        this.hide(this.profileContainer);
+    }
+    this.postsContainer.innerHTML = "<h3>Posts</h3>";
+    const url = new URL(window.location.origin + (filter ? `/api/posts/${filter}` : "/api/posts"));
+    url.searchParams.set('page', page);
+    const response = await fetch(url);
+    const data = await response.json();
+    data.posts.forEach((post) => {
+      this.postsContainer.appendChild(this.createPostElement(post));
+    });
+    this.renderPagination(data);
+  }
+
+  async loadProfile(username, page = 1) {
+    this.hide(this.newPostContainer);
+    this.show(this.profileContainer);
+    const response = await fetch(`/api/users/${username}`);
+    const user = await response.json();
+    this.profileContainer.innerHTML = this.createProfileElement(user);
+    this.bindFollowButton(user);
+    this.loadPosts(username, page);
+  }
+
+  renderPagination(data) {
+    this.paginationContainer.innerHTML = '';
+    const path = window.location.pathname;
+    if (data.has_previous) {
+        const prevButton = this.createButton('Previous', () => this.navigateTo(path, data.previous_page_number));
+        this.paginationContainer.appendChild(prevButton);
+    }
+    if (data.has_next) {
+        const nextButton = this.createButton('Next', () => this.navigateTo(path, data.next_page_number));
+        this.paginationContainer.appendChild(nextButton);
+    }
+  }
+
+  createButton(text, onClick) {
+      const button = document.createElement('button');
+      button.textContent = text;
+      button.className = 'btn btn-secondary mr-2';
+      button.addEventListener('click', onClick);
+      return button;
+  }
+
+  createPostElement(post) {
+    const postDiv = this.createDiv("post");
+    postDiv.innerHTML = `
+      <div class="post-avatar">${post.user.charAt(0).toUpperCase()}</div>
+      <div class="post-content">
+        <div class="post-header">
+          <span class="post-username" data-username="${post.user}">${post.user}</span>
+          <span class="post-timestamp">${post.timestamp}</span>
+        </div>
+        <div class="post-body">${post.content.replace(/\n/g, "<br>")}</div>
+        <div class="post-actions">
+          <button class="btn btn-primary btn-sm like-btn" data-post-id="${post.id}">${post.is_liked ? "Unlike" : "Like"}</button>
+          <span class="like-count">${post.likes.length}</span>
+          <button class="btn btn-outline-primary btn-sm ml-3 comment-btn" data-post-id="${post.id}">Comment</button>
+          ${this.currentUser && this.currentUser.id === post.user_id ? `<button class="btn btn-outline-secondary btn-sm ml-3 edit-btn" data-post-id="${post.id}">Edit</button>` : ''}
+        </div>
+        <div class="comments-section" id="comments-section-${post.id}" style="display:none;">
+            <div class="comments-list"></div>
+            <div class="comment-input-area mt-2">
+                <textarea class="form-control comment-textarea" placeholder="Write a comment..."></textarea>
+                <button class="btn btn-primary btn-sm mt-2 submit-comment-btn">Submit Comment</button>
+            </div>
+        </div>
+      </div>
+    `;
+    postDiv.querySelector(".post-username").addEventListener("click", (e) => {
+      this.navigateTo(`/u/${e.target.dataset.username}`);
+    });
+    postDiv.querySelector(".like-btn").addEventListener("click", (e) => {
+      this.toggleLike(e.target.dataset.postId);
+    });
+    const editBtn = postDiv.querySelector(".edit-btn");
+    if (editBtn) {
+        editBtn.addEventListener("click", (e) => {
+            this.editPost(e.target.dataset.postId, postDiv);
+        });
+    }
+    const commentBtn = postDiv.querySelector(".comment-btn");
+    if (commentBtn) {
+        commentBtn.addEventListener("click", (e) => {
+            this.toggleComments(post.id, postDiv);
+        });
+    }
+    return postDiv;
+  }
+
+  async toggleComments(postId, postDiv) {
+    const commentsSection = postDiv.querySelector(`#comments-section-${postId}`);
+    if (commentsSection.style.display === "none") {
+        commentsSection.style.display = "block";
+        await this.loadComments(postId, commentsSection);
+        const submitCommentBtn = commentsSection.querySelector(".submit-comment-btn");
+        submitCommentBtn.addEventListener("click", () => {
+            const commentContent = commentsSection.querySelector(".comment-textarea").value;
+            this.submitComment(postId, commentContent, commentsSection);
+        });
+    } else {
+        commentsSection.style.display = "none";
+    }
+  }
+
+  async loadComments(postId, commentsSection) {
+    const commentsList = commentsSection.querySelector(".comments-list");
+    commentsList.innerHTML = "Loading comments...";
+    const response = await fetch(`/api/posts/${postId}/comments`);
+    const comments = await response.json();
+    commentsList.innerHTML = "";
+    if (comments.length === 0) {
+        commentsList.innerHTML = "No comments yet.";
+    } else {
+        comments.forEach(comment => {
+            const commentDiv = this.createDiv("comment-item");
+            commentDiv.innerHTML = `<strong>${comment.user}</strong>: ${comment.content} <span style='color:#888;font-size:0.9em;'>${comment.timestamp}</span>`;
+            commentsList.appendChild(commentDiv);
+        });
+    }
+  }
+
+  async submitComment(postId, content, commentsSection) {
+    const response = await fetch("/api/comments", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          "X-CSRFToken": getCookie("csrftoken"),
+            "Content-Type": "application/json",
+            "X-CSRFToken": this.getCookie("csrftoken"),
         },
-        body: JSON.stringify({ profile_id: profileId }),
-      })
-        .then((response) => response.json())
-        .then((data) => {
-          if (data.error) {
-            alert(data.error);
-            return;
-          }
-          // Update button text
-          this.textContent = data.following ? "Unfollow" : "Follow";
-          // Update followers count
-          document.getElementById("followers-count").textContent =
-            data.followers_count;
-        })
-        .catch((error) => {
-          alert("An error occurred: " + error);
-        });
+        body: JSON.stringify({ post_id: postId, content: content })
+    });
+    if (response.ok) {
+        commentsSection.querySelector(".comment-textarea").value = "";
+        await this.loadComments(postId, commentsSection);
+    } else {
+        console.error("Failed to submit comment");
+    }
+  }
+
+  editPost(postId, postDiv) {
+    const postBody = postDiv.querySelector(".post-body");
+    const originalContent = postBody.innerHTML.replace(/<br>/g, "\n");
+    postBody.innerHTML = `
+        <textarea class="form-control">${originalContent}</textarea>
+        <button class="btn btn-primary btn-sm mt-2 save-btn">Save</button>
+    `;
+    postDiv.querySelector(".save-btn").addEventListener("click", () => {
+        const newContent = postDiv.querySelector("textarea").value;
+        this.savePost(postId, newContent, postDiv);
     });
   }
-}
 
-// Send comment to server
-function sendComment(postId, commentText, onSuccess, onError) {
-  fetch("/comment/", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-CSRFToken": getCookie("csrftoken"),
-    },
-    body: JSON.stringify({ post_id: postId, comment: commentText }),
-  })
-    .then((response) => {
-      const contentType = response.headers.get("content-type");
-      if (contentType && contentType.includes("application/json")) {
-        return response.json();
-      } else {
-        return response.text().then((text) => {
-          throw new Error(text);
-        });
-      }
-    })
-    .then((data) => {
-      if (data.success) {
-        if (onSuccess) onSuccess(data);
-      } else {
-        if (onError) onError(data.error || "Unknown error");
-      }
-    })
-    .catch((error) => {
-      if (onError) onError(error.message || error);
+  async savePost(postId, content, postDiv) {
+    const response = await fetch(`/api/posts/${postId}`, {
+        method: "PUT",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": this.getCookie("csrftoken"),
+        },
+        body: JSON.stringify({ content })
     });
-}
-
-// Utility: get CSRF token from cookie
-function getCookie(name) {
-  let cookieValue = null;
-  if (document.cookie && document.cookie !== "") {
-    document.cookie.split(";").forEach((cookie) => {
-      cookie = cookie.trim();
-      if (cookie.startsWith(name + "=")) {
-        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-      }
-    });
+    if (response.ok) {
+        const post = await response.json();
+        const postBody = postDiv.querySelector(".post-body");
+        postBody.innerHTML = post.content.replace(/\n/g, "<br>");
+    } else {
+        console.error("Failed to save post");
+    }
   }
-  return cookieValue;
+
+  createProfileElement(user) {
+    return `
+      <div class="profile-header">
+        <div class="profile-avatar">${user.username.charAt(0).toUpperCase()}</div>
+        <div class="profile-info">
+          <h3 class="profile-username">${user.username}</h3>
+          <div class="profile-stats">
+            <div class="profile-stat">
+              <span class="stat-count">${user.followers.length}</span>
+              <span class="stat-label">Followers</span>
+            </div>
+            <div class="profile-stat">
+              <span class="stat-count">${user.following.length}</span>
+              <span class="stat-label">Following</span>
+            </div>
+          </div>
+          ${this.currentUser && this.currentUser.id !== user.id ? `<button id="follow-btn" class="btn btn-primary" data-username="${user.username}">${user.is_following ? "Unfollow" : "Follow"}</button>` : ""}
+        </div>
+      </div>
+    `;
+  }
+
+  bindFollowButton(user) {
+    const followBtn = document.querySelector("#follow-btn");
+    if (followBtn) {
+      followBtn.addEventListener("click", async (e) => {
+        const username = e.target.dataset.username;
+        const response = await fetch(`/api/users/${username}/follow`, {
+          method: "POST",
+          headers: {
+            "X-CSRFToken": this.getCookie("csrftoken"),
+          },
+        });
+        const data = await response.json();
+        if (response.ok) {
+          this.loadProfile(username);
+        } else {
+          console.error(data.error);
+        }
+      });
+    }
+  }
+
+  async toggleLike(postId) {
+    const response = await fetch(`/api/posts/${postId}`,
+        {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": this.getCookie("csrftoken"),
+            },
+            body: JSON.stringify({ like: true })
+        });
+    if (response.ok) {
+        const post = await response.json();
+        const likeBtn = document.querySelector(`.like-btn[data-post-id="${postId}"]`);
+        const likeCount = likeBtn.nextElementSibling;
+        likeBtn.textContent = post.is_liked ? "Unlike" : "Like";
+        likeCount.textContent = post.likes.length;
+    } else {
+        console.error("Failed to like post");
+    }
 }
 
-// Utility: show/hide elements
-function showElement(selector) {
-  document.querySelector(selector).style.display = "block";
-}
-function hideElement(selector) {
-  document.querySelector(selector).style.display = "none";
-}
+  show(element) {
+    element.style.display = "block";
+  }
 
-// Utility: create div/button with class
-function createDiv(className) {
-  const div = document.createElement("div");
-  div.className = className;
-  return div;
-}
-function createButton(text, className) {
-  const btn = document.createElement("button");
-  btn.textContent = text;
-  btn.className = className;
-  return btn;
+  hide(element) {
+    element.style.display = "none";
+  }
+
+  createDiv(className) {
+    const div = document.createElement("div");
+    div.className = className;
+    return div;
+  }
+
+  getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== "") {
+      const cookies = document.cookie.split(";");
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + "=")) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+
+  async fetchCurrentUser() {
+    try {
+        const response = await fetch("/api/users/me");
+        if (response.ok) {
+            this.currentUser = await response.json();
+        } else {
+            this.currentUser = null;
+        }
+    } catch (error) {
+        console.error("Error fetching current user:", error);
+        this.currentUser = null;
+    }
+  }
 }

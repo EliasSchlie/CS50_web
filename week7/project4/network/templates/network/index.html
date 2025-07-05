@@ -2,17 +2,15 @@
 {% load static %}
 
 {% block body %}
-<div id="profile-view">
-</div>
+<div id="profile-view"></div>
 
 {% if user.is_authenticated %}
 <hr>
 <div id="new-post-container" class="container">
     <h3>New Post</h3>
-    <form method="post" class="mb-0">
-        {% csrf_token %}
+    <form id="new-post-form" class="mb-0">
         <div class="form-group mb-2">
-            {{ form.content }}
+            <textarea id="new-post-content" class="form-control"></textarea>
         </div>
         <button type="submit" class="btn btn-primary">Post</button>
     </form>
@@ -22,6 +20,7 @@
 <hr>
 <div id="posts-container" class="container">
 </div>
+<div id="pagination-container" class="container mt-3 d-flex justify-content-center"></div>
 {% endblock %}
 
 {% block script %}
