@@ -1,0 +1,17 @@
+<div>
+  <p>Username: {{ profile.username }}</p>
+  <p>Email: {{ profile.email }}</p>
+  <p>
+    Followers: <span id="followers-count">{{ profile.followers.count }}</span>
+  </p>
+  <p>Following: {{ profile.following.count }}</p>
+  {% if user.is_authenticated %} {% if user.id != profile.id %}
+  <button
+    id="follow-btn"
+    class="btn btn-primary"
+    data-profile-id="{{ profile.id }}"
+  >
+    {% if user in profile.followers.all %}Unfollow{% else %}Follow{% endif %}
+  </button>
+  {% endif %} {% endif %}
+</div>

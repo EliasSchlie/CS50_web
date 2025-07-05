@@ -1,0 +1,141 @@
+body {
+    background: #f4f6fb;
+    font-family: 'Segoe UI', Arial, sans-serif;
+}
+
+.container {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+    padding: 2rem 2.5rem;
+    margin-bottom: 2rem;
+    border: none;
+}
+
+#new-post-container {
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+    border-left: 4px solid #007bff;
+    background: #f0f7ff;
+}
+
+#new-post-container h3 {
+    color: #007bff;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+#posts-container h3 {
+    color: #333;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+}
+
+.post {
+    display: flex;
+    align-items: flex-start;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    padding: 1.5rem 1.5rem 1rem 1.5rem;
+    margin-bottom: 1.5rem;
+    border: none;
+    transition: box-shadow 0.2s;
+    position: relative;
+}
+
+.post:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.10);
+}
+
+.post-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: #e0e7ef;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #007bff;
+    margin-right: 1.25rem;
+    flex-shrink: 0;
+}
+
+.post-content {
+    flex: 1;
+}
+
+.post-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.post-username {
+    font-weight: 600;
+    color: #007bff;
+    margin-right: 0.75rem;
+    font-size: 1.1rem;
+}
+
+.post-timestamp {
+    color: #888;
+    font-size: 0.95rem;
+}
+
+.post-body {
+    margin-bottom: 0.75rem;
+    color: #222;
+    font-size: 1.08rem;
+}
+
+.post-actions {
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+}
+
+.btn-primary,
+.btn-primary:focus {
+    background: linear-gradient(90deg, #007bff 60%, #0056b3 100%);
+    border: none;
+    color: #fff;
+    font-weight: 500;
+    border-radius: 6px;
+    padding: 0.4rem 1.2rem;
+    box-shadow: 0 1px 4px rgba(0, 123, 255, 0.08);
+    transition: background 0.2s, box-shadow 0.2s;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(90deg, #0056b3 60%, #007bff 100%);
+    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.13);
+}
+
+.btn {
+    outline: none !important;
+}
+
+.like-count {
+    margin-left: 0.5rem;
+    color: #007bff;
+    font-weight: 600;
+}
+
+@media (max-width: 600px) {
+    .container {
+        padding: 1rem 0.5rem;
+    }
+
+    .post {
+        flex-direction: column;
+        padding: 1rem 0.7rem 0.7rem 0.7rem;
+    }
+
+    .post-avatar {
+        margin-bottom: 0.7rem;
+        margin-right: 0;
+    }
+}
